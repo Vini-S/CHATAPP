@@ -20,15 +20,20 @@ while True:
 print(full_msg)
 '''
 
-msg = serversocket.recv(1024)
-print(msg.decode('utf-8'))
+msg = serversocket.recv(1024) # receing welcome message from server
+if msg.decode('utf-8') == '':
+	print("Invalid user")
+	exit()
+else:
+	print(msg.decode('utf-8'))
 
-print(serversocket.recv(1024))
+choice = serversocket.recv(1024) # receving choice from server
+print(choice.decode('utf-8'))
 request = input("enter your choice: ")
-serversocket.send(bytes(request,'utf-8'))
+serversocket.send(bytes(request,'utf-8')) # sending choice to server
 
-result = serversocket.recv(1024)
+result = serversocket.recv(1024) # receving result of requested choice by client
 print(result.decode('utf-8'))
 
-qww = input("enter the client name:")
-serversocket.send(bytes(qww, 'utf-8'))
+c_name = input("enter the client name:")
+serversocket.send(bytes(c_name, 'utf-8'))
