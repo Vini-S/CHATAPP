@@ -15,6 +15,7 @@ class user:
 		self.password = password
 		self.c_socket = c_socket
 		self.address = address
+#		self.status = 
 	def login(self):
 		querry = cursor.execute(f"SELECT * FROM user WHERE username='{self.username}' AND password='{self.password}'")
 		data = cursor.fetchone()
@@ -25,14 +26,28 @@ class user:
 		msg = "200:"+msg
 		self.c_socket.send(bytes(msg, "utf-8"))
 
+	def c_to_c_msg(self,other_c,msg):
+		msg = 'chat:' + self.username+':'+msg
+		other_c.c_socket.send(bytes(msg, 'utf-8'))
+
+def check_user(chat_user):
+	for user in c_users:
+		if user.username == chat_user:
+                        return user
+	return False
+
 def get_c_response(c_socket):
 	try:
 		res = c_socket.recv(1024)
+		if res[:4].decode('utf-8') == "chat:":
+			res = res.decode('utf-8').split(':')
+			return res
 		return res.decode('utf-8')
 	except ConnectionResetError:
 		print(f"connection from {c_users[-1].address} is closed")
-		c_user.pop()
+		c_users.pop()
 		c_socket.close()
+
 
 def c_thread():
 	c_socket, address = serversocket.accept()
@@ -48,7 +63,7 @@ def c_thread():
 		c_users[-1].send_msg("Welcome to the server :)")
 
 		print(f"connection from {c_users[-1].address} is successful ")
-
+		time.sleep(10)
 		c_users[-1].send_msg("1)Online Users\n2)Quit")
 
 		request = get_c_response(c_socket)
@@ -57,7 +72,18 @@ def c_thread():
 			list_of_users = ", ".join([user.username for user in c_users])[::-1].replace(",", "& ",1)[::-1]
 			c_users[-1].send_msg(list_of_users)
 			chat_user = get_c_response(c_socket)
-			print(chat_user)
+			chat_user = check_user(chat_user)
+			if chat_user:
+
+				#c_users[-1].send_msg("Connected with user ")
+				while True:
+					chat_user.send_msg(f"Chat request from {c_users[-1]}")
+					resp = get_c_response(c_socket)
+					print(resp)
+					if resp:
+						c_users[-1].c_to_c_msg(chat_user,resp)
+					else:
+						break
 	c_users.pop()
 	c_socket.close()
 
